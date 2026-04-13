@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Run Prisma generate before starting services
+npx prisma generate
+
+npm install
+
 # Start NestJS app in background
 npm run start:dev &
 
