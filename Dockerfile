@@ -11,4 +11,8 @@ COPY . .
 RUN npm run build
 
 EXPOSE 3000
+EXPOSE 5555
+
+# Make entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
 CMD ["npm", "run", "start:dev"]
