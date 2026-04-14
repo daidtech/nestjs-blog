@@ -12,7 +12,6 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const [form, setForm] = useState({
     email: '',
-    username: '',
     firstName: '',
     lastName: '',
     password: '',
@@ -45,7 +44,6 @@ export default function RegisterPage() {
         method: 'POST',
         body: JSON.stringify({
           email: form.email,
-          username: form.username,
           firstName: form.firstName || undefined,
           lastName: form.lastName || undefined,
           password: form.password,
@@ -107,20 +105,6 @@ export default function RegisterPage() {
                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Username
-              </label>
-              <input
-                type="text"
-                value={form.username}
-                onChange={(e) => update('username', e.target.value)}
-                placeholder="johndoe"
-                required
-                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
-              />
             </div>
 
             <div>

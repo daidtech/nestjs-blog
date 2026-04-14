@@ -6,7 +6,7 @@
 
 | Model | Fields | Status |
 |-------|--------|--------|
-| **User** | id, email, username, firstName, lastName, bio, avatarUrl, phoneNumber, dateOfBirth, isActive, timestamps | Schema only - no CRUD API |
+| **User** | id, email, password, firstName, lastName, bio, avatarUrl, phoneNumber, dateOfBirth, isActive, timestamps | Schema only - no CRUD API |
 | **Post** | id, title, slug, excerpt, content, published, authorId, timestamps | CRUD implemented (basic) |
 | **Category** | id, name, slug, timestamps | Schema only - no CRUD API |
 | **Tag** | id, name, slug, timestamps | Schema only - no CRUD API |
@@ -66,7 +66,7 @@
 2. Create DTOs:
    - `src/user/dto/create-user.dto.ts`
      ```
-     Fields: email (required, @IsEmail), username (required, @IsString, @MinLength(3)),
+     Fields: email (required, @IsEmail), password (required, @IsString, @MinLength(3)),
      firstName?, lastName?, bio?, phoneNumber?, dateOfBirth?
      ```
    - `src/user/dto/update-user.dto.ts` (use `PartialType(CreateUserDto)`)
@@ -390,7 +390,7 @@
      auth.service.ts
      dto/
        login.dto.ts        # email, password
-       register.dto.ts     # email, username, password, firstName?, lastName?
+       register.dto.ts     # email, password, password, firstName?, lastName?
      strategies/
        jwt.strategy.ts
        local.strategy.ts
@@ -418,7 +418,7 @@
    # Register
    curl -X POST http://localhost:3000/auth/register \
      -H "Content-Type: application/json" \
-     -d '{"email":"test@test.com","username":"testuser","password":"123456"}'
+     -d '{"email":"test@test.com","password":"123456"}'
 
    # Login
    curl -X POST http://localhost:3000/auth/login \

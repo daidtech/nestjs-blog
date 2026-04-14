@@ -29,8 +29,8 @@ export class PostService {
     const user = await this.prisma.user.create({
       data: {
         email: 'admin@example.com',
-        username: 'admin',
         firstName: 'Admin',
+        password: '',
       },
       select: { id: true },
     });
