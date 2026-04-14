@@ -1,0 +1,26 @@
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class UpdatePostDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  excerpt?: string;
+
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+}
