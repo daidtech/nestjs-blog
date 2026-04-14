@@ -1,43 +1,52 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, type FormEvent } from 'react';
 import { apiFetch } from '@/lib/api';
-import type { Category, Tag } from '@/lib/types';
+import type { Post, Category, Tag } from '@/lib/types';
 
-type PostForm = {
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  published: boolean;
-  categoryIds: number[];
-  tagIds: number[];
-};
-
-const emptyForm: PostForm = {
-  title: '',
-  slug: '',
-  excerpt: '',
-  content: '',
-  published: false,
-  categoryIds: [],
-  tagIds: [],
-};
-
-export default function NewPostPage() {
+export default function EditPostPage() {
+  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const [form, setForm] = useState<PostForm>(emptyForm);
+  const [form, setForm] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    published: false,
+    categoryIds: [] as number[],
+    tagIds: [] as number[],
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiFetch<Category[]>('/categories').then(setCategories).catch(() => {});
-    apiFetch<Tag[]>('/tags').then(setTags).catch(() => {});
-  }, []);
+    Promise.all([
+      apiFetch<Post>(`/posts/${params.id}`),
+      apiFetch<Category[]>('/categories').catch(() => []),
+      apiFetch<Tag[]>('/tags').catch(() => []),
+    ]).then(([post, cats, tgs]) => {
+      setForm({
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt ?? '',
+        content: post.content ?? '',
+        published: post.published,
+        categoryIds: post.categories?.map((c) => c.id) ?? [],
+        tagIds: post.taggings?.map((t) => t.tag.id) ?? post.tags?.map((t) => t.id) ?? [],
+      });
+      setCategories(cats);
+      setTags(tgs);
+      setLoading(false);
+    }).catch((e) => {
+      setError(e.message);
+      setLoading(false);
+    });
+  }, [params.id]);
 
   function toggleCategory(id: number) {
     setForm((prev) => ({
@@ -60,96 +69,94 @@ export default function NewPostPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSaving(true);
 
     try {
-      const res = await apiFetch<{ id: number }>('/posts', {
-        method: 'POST',
+      await apiFetch(`/posts/${params.id}`, {
+        method: 'PATCH',
         body: JSON.stringify({
           title: form.title,
           slug: form.slug || undefined,
           excerpt: form.excerpt || undefined,
           content: form.content || undefined,
           published: form.published,
-          categoryIds: form.categoryIds.length > 0 ? form.categoryIds : undefined,
-          tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,
+          categoryIds: form.categoryIds,
+          tagIds: form.tagIds,
         }),
       });
-      router.push(`/posts/${res.id}`);
+      router.push(`/posts/${params.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create post');
+      setError(e instanceof Error ? e.message : 'Failed to update post');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
         <Link href="/" className="hover:text-indigo-600">Home</Link>
         <span>/</span>
         <Link href="/posts" className="hover:text-indigo-600">Posts</Link>
         <span>/</span>
-        <span className="text-gray-600">New Post</span>
+        <Link href={`/posts/${params.id}`} className="hover:text-indigo-600">{form.title || 'Post'}</Link>
+        <span>/</span>
+        <span className="text-gray-600">Edit</span>
       </nav>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Post</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Post</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Title *</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Enter post title"
               required
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
           </div>
 
-          {/* Slug */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Slug <span className="text-gray-400 font-normal">(auto-generated if empty)</span>
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Slug</label>
             <input
               type="text"
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              placeholder="my-post-slug"
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
           </div>
 
-          {/* Excerpt */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Excerpt</label>
             <textarea
               value={form.excerpt}
               onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
-              placeholder="Brief summary of the post"
               rows={2}
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none"
             />
           </div>
 
-          {/* Content */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
             <textarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="Write your post content..."
               rows={12}
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y font-mono"
             />
           </div>
 
-          {/* Categories */}
           {categories.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
@@ -172,7 +179,6 @@ export default function NewPostPage() {
             </div>
           )}
 
-          {/* Tags */}
           {tags.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
@@ -195,7 +201,6 @@ export default function NewPostPage() {
             </div>
           )}
 
-          {/* Published toggle */}
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -207,31 +212,25 @@ export default function NewPostPage() {
               <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-indigo-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
             </label>
             <div>
-              <p className="text-sm font-medium text-gray-700">Publish immediately</p>
-              <p className="text-xs text-gray-400">Make this post visible to everyone</p>
+              <p className="text-sm font-medium text-gray-700">Published</p>
+              <p className="text-xs text-gray-400">Toggle post visibility</p>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
-              {error}
-            </div>
+            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>
           )}
 
-          {/* Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-            <Link
-              href="/posts"
-              className="text-sm text-gray-500 hover:text-gray-700 font-medium"
-            >
+            <Link href={`/posts/${params.id}`} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
               Cancel
             </Link>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating...' : 'Create Post'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
