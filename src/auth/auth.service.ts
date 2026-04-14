@@ -4,7 +4,9 @@ import { CreateAuthRegisterDto } from "./dto/create-auth-register.dto";
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
   async register(dto: CreateAuthRegisterDto) {
     const { email, firstName, lastName, password, confirmPassword } = dto;
@@ -37,7 +39,7 @@ export class AuthService {
         lastName,
         isActive: true,
         // avatarUrl, phoneNumber, etc. can be added here
-        password: hashed, // Uncomment if you add password field to User model
+        passwordHash: hashed, // Uncomment if you add password field to User model
       },
     });
 
