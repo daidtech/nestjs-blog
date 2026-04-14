@@ -45,28 +45,34 @@ export default function PostDetailsPage() {
   }, [params.id]);
 
   return (
-    <main className="single-wrap">
-      <section className="panel">
-        <div className="topbar">
-          <h1>Post Details</h1>
-          <Link href="/" className="link-btn secondary-link">
+    <main className="max-w-2xl mx-auto mt-10 px-4">
+      <section className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Post Details</h1>
+          <Link
+            href="/"
+            className="inline-block bg-gray-100 hover:bg-indigo-50 text-indigo-700 font-medium px-4 py-2 rounded-lg border border-indigo-200 transition-colors"
+          >
             Back Home
           </Link>
         </div>
 
-        {error && <p className="error">{error}</p>}
-        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-600 font-medium mb-4">{error}</p>}
+        {loading && <p className="text-gray-500">Loading...</p>}
 
         {post && (
-          <article className="detail">
-            <h2>{post.title}</h2>
-            <p className="muted">Slug: /{post.slug}</p>
-            <p className="muted">Published: {post.published ? 'Yes' : 'No'}</p>
-            {post.excerpt && <p>{post.excerpt}</p>}
-            <div>{post.content ?? 'No content'}</div>
+          <article className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">{post.title}</h2>
+            <p className="text-gray-400 text-sm">Slug: /{post.slug}</p>
+            <p className="text-gray-400 text-sm">Published: {post.published ? 'Yes' : 'No'}</p>
+            {post.excerpt && <p className="text-gray-600">{post.excerpt}</p>}
+            <div className="prose max-w-none">{post.content ?? 'No content'}</div>
 
-            <div className="actions">
-              <button onClick={removePost} className="danger">
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={removePost}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition-colors"
+              >
                 Delete Post
               </button>
             </div>

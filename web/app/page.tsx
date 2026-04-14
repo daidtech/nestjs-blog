@@ -30,30 +30,36 @@ export default function Page() {
   }, []);
 
   return (
-    <main className="single-wrap">
-      <section className="panel">
-        <div className="topbar">
+    <main className="max-w-3xl mx-auto mt-10 px-4">
+      <section className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div>
-            <h1>Posts</h1>
-            <p>Browse all posts from your NestJS API.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Posts</h1>
+            <p className="text-gray-500">Browse all posts from your NestJS API.</p>
           </div>
-          <Link href="/posts/new" className="link-btn">
+          <Link
+            href="/posts/new"
+            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition-colors"
+          >
             Create New Post
           </Link>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="text-red-600 font-medium mb-4">{error}</p>}
         {loading ? (
-          <p>Loading...</p>
+          <p className="text-gray-500">Loading...</p>
         ) : (
-          <ul className="list">
+          <ul className="divide-y divide-gray-200">
             {posts.map((post) => (
-              <li key={post.id}>
+              <li key={post.id} className="flex items-center justify-between py-4">
                 <div>
-                  <strong>{post.title}</strong>
-                  <p>/{post.slug}</p>
+                  <strong className="block text-lg text-gray-800">{post.title}</strong>
+                  <span className="text-gray-400 text-sm">/{post.slug}</span>
                 </div>
-                <Link href={`/posts/${post.id}`} className="link-btn secondary-link">
+                <Link
+                  href={`/posts/${post.id}`}
+                  className="inline-block bg-gray-100 hover:bg-indigo-50 text-indigo-700 font-medium px-4 py-1.5 rounded-lg border border-indigo-200 transition-colors"
+                >
                   View Details
                 </Link>
               </li>
