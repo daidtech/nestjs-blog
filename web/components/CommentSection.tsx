@@ -206,16 +206,18 @@ export default function CommentSection({ postId }: Props) {
         <p className="text-sm text-gray-400 text-center py-8">No comments yet. Be the first!</p>
       ) : (
         <div className="space-y-6">
-          {comments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              onReply={setReplyTo}
-              onDelete={handleDelete}
-              currentUserId={user?.id}
-              isAdmin={user?.role === 'ADMIN'}
-            />
-          ))}
+          {comments
+            .filter((comment) => comment.parentId == null)
+            .map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                onReply={setReplyTo}
+                onDelete={handleDelete}
+                currentUserId={user?.id}
+                isAdmin={user?.role === 'ADMIN'}
+              />
+            ))}
         </div>
       )}
     </section>

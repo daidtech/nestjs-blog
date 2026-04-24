@@ -95,7 +95,10 @@ export class PostService {
 
   findComments(postId: number) {
     return this.prisma.comment.findMany({
-      where: { postId },
+      where: {
+        postId,
+        parentId: null,
+      },
       orderBy: { createdAt: 'asc' },
       include: {
         author: true,
