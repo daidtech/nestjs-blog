@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { error } from 'console';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostService {
@@ -92,5 +92,48 @@ export class PostService {
 
   remove(id: number) {
     return this.prisma.post.delete({ where: { id } });
+  }
+
+  findComments(postId: number) {
+    return this.prisma.comment.findMany({
+      where: { postId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        author: true,
+        replies: {
+          include: {
+            author: true,
+          },
+        },
+      },
+    });
+  }
+
+  createComment(postId: number, authorId: number, data: { content: string; parentId?: number | null }) {
+    return this.prisma.comment.create({
+      data: {
+        content: data.content,
+        postId,
+        authorId,
+        parentId: data.parentId ?? null,
+      },
+      include: {
+        author: true,
+        replies: {
+          include: {
+            author: true,
+          },
+        },
+      },
+    });
+  }
+
+  async likePost(postId: number, userId: number) {
+    return this.prisma.like.create({
+      data: {
+        postId,
+        userId,
+      },
+    });
   }
 }

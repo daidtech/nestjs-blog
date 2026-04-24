@@ -7,10 +7,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { PostService } from './post.service';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('posts')
 export class PostController {
@@ -24,6 +29,27 @@ export class PostController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.postService.findOne(id);
+  }
+
+  @Get(':id/comments')
+  findComments(@Param('id', ParseIntPipe) id: number) {
+    return this.postService.findComments(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/comments')
+  createComment(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: Request,
+    @Body() body: CreateCommentDto,
+  ) {
+    return this.postService.createComment(postId, req.user?.id ?? 1, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  likePost(@Param('id', ParseIntPipe) postId: number, @Req() req: Request) {
+    return this.postService.likePost(postId, req.user?.id ?? 1);
   }
 
   @Post()
