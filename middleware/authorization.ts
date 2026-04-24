@@ -4,7 +4,7 @@ import createError from 'http-errors';
 // Redirect to login if not authenticated
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
-    res.redirect('/users/login');
+    res.redirect('/auth/login');
     return;
   }
   next();
@@ -14,7 +14,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 function requireRole(role: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.redirect('/users/login');
+      res.redirect('/auth/login');
       return;
     }
     if ((req.user as unknown as { role: string }).role !== role) {
