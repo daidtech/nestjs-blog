@@ -18,6 +18,22 @@ export class CategoryService {
   findAll() {
     return this.prisma.category.findMany({
       orderBy: { id: 'desc' },
+      include: {
+        _count: {
+          select: { posts: true },
+        },
+      },
+    });
+  }
+
+  findOne(id: number) {
+    return this.prisma.category.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { posts: true },
+        },
+      },
     });
   }
 
