@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -21,8 +22,26 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get()
-  findAll() {
-    return this.postService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('tagId') tagId?: string,
+    @Query('published') published?: string,
+    @Query('sortBy') sortBy?: 'createdAt' | 'title',
+    @Query('order') order?: 'asc' | 'desc',
+  ) {
+    return this.postService.findAll({
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      categoryId: categoryId ? parseInt(categoryId, 10) : undefined,
+      tagId: tagId ? parseInt(tagId, 10) : undefined,
+      published: typeof published !== 'undefined' ? published === 'true' : undefined,
+      sortBy,
+      order,
+    });
   }
 
   @Get(':id')

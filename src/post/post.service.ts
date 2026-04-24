@@ -16,12 +16,93 @@ export class PostService {
       .replace(/-+/g, '-');
   }
 
-  findAll() {
-    return this.prisma.post.findMany({
-      orderBy: { id: 'desc' },
-      include: {
-        author: true,
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoryId?: number;
+    tagId?: number;
+    published?: boolean;
+    sortBy?: 'createdAt' | 'title';
+    order?: 'asc' | 'desc';
+  } = {}) {
+    const {
+      page,
+      limit,
+      search,
+      categoryId,
+      tagId,
+      published,
+      sortBy = 'createdAt',
+      order = 'desc',
+    } = options;
+
+    const where: any = {};
+
+    if (typeof published !== 'undefined') {
+      where.published = published;
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (categoryId) {
+      where.categories = { some: { id: categoryId } };
+    }
+
+    if (tagId) {
+      where.taggings = { some: { tagId } };
+    }
+
+    const orderBy = { [sortBy]: order } as const;
+    const include = {
+      author: true,
+      categories: true,
+      taggings: {
+        include: { tag: true },
       },
+      _count: {
+        select: {
+          comments: true,
+          likes: true,
+        },
+      },
+    };
+
+    if (page && limit) {
+      const take = limit;
+      const skip = (page - 1) * limit;
+      const [data, total] = await Promise.all([
+        this.prisma.post.findMany({
+          where,
+          orderBy,
+          include,
+          skip,
+          take,
+        }),
+        this.prisma.post.count({ where }),
+      ]);
+
+      return {
+        data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
+      };
+    }
+
+    return this.prisma.post.findMany({
+      where,
+      orderBy,
+      include,
     });
   }
 
@@ -30,6 +111,10 @@ export class PostService {
       where: { id },
       include: {
         author: true,
+        categories: true,
+        taggings: {
+          include: { tag: true },
+        },
       },
     });
   }

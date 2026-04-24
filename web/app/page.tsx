@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import type { Post } from '@/lib/types';
+import type { Post, Category, Tag } from '@/lib/types';
 import PostCard from '@/components/PostCard';
 import Sidebar from '@/components/Sidebar';
 import SearchBar from '@/components/SearchBar';
@@ -10,14 +10,36 @@ import Link from 'next/link';
 
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedTag, setSelectedTag] = useState<number | null>(null);
 
   useEffect(() => {
-    apiFetch<Post[]>('/posts')
-      .then(setPosts)
-      .catch(() => {})
+    setLoading(true);
+
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('categoryId', String(selectedCategory));
+    if (selectedTag) params.set('tagId', String(selectedTag));
+
+    const path = `/posts${params.toString() ? `?${params.toString()}` : ''}`;
+
+    Promise.all([
+      apiFetch<Post[]>(path),
+      apiFetch<Category[]>('/categories').catch(() => []),
+      apiFetch<Tag[]>('/tags').catch(() => []),
+    ])
+      .then(([postList, cats, tgs]) => {
+        setPosts(postList);
+        setCategories(cats);
+        setTags(tgs);
+      })
+      .catch(() => {
+        setPosts([]);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedCategory, selectedTag]);
 
   const featured = posts.slice(0, 3);
   const recent = posts.slice(3);
@@ -56,6 +78,89 @@ export default function HomePage() {
           </div>
         ) : (
           <>
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Filter posts on the home page</h2>
+                  <p className="text-sm text-gray-500 mt-1">Select a category or a tag to narrow the feed.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSelectedTag(null);
+                  }}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {categories.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Category</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(null);
+                          setSelectedTag(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-full border text-sm ${selectedCategory === null ? 'bg-indigo-600 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        All
+                      </button>
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat.id);
+                            setSelectedTag(null);
+                          }}
+                          className={`px-3 py-1.5 rounded-full border text-sm ${selectedCategory === cat.id ? 'bg-emerald-600 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tags.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Tag</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTag(null);
+                          setSelectedCategory(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-full border text-sm ${selectedTag === null ? 'bg-indigo-600 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        All
+                      </button>
+                      {tags.map((tag) => (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTag(tag.id);
+                            setSelectedCategory(null);
+                          }}
+                          className={`px-3 py-1.5 rounded-full border text-sm ${selectedTag === tag.id ? 'bg-indigo-600 text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                          {tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* Featured Posts */}
             {featured.length > 0 && (
               <section className="mb-12">
