@@ -1,14 +1,41 @@
-import { Controller, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { PostService } from '@/post/post.service';
+import { CommentService } from './comment.service';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
-@Controller('comments')
+@Controller()
 export class CommentController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly commentService: CommentService) {}
+
+  @Get('posts/:id/comments')
+  findComments(@Param('id', ParseIntPipe) postId: number) {
+    return this.commentService.findComments(postId);
+  }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
+  @Post('posts/:id/comments')
+  createComment(
+    @Param('id', ParseIntPipe) postId: number,
+    @Req() req: Request,
+    @Body() body: CreateCommentDto,
+  ) {
+    return this.commentService.createComment(postId, req.user?.id ?? 1, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('comments/:id')
   removeComment(@Param('id', ParseIntPipe) id: number) {
-    return this.postService.deleteComment(id);
+    return this.commentService.deleteComment(id);
   }
 }

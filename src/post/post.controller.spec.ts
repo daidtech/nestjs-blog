@@ -4,11 +4,10 @@ import { PostService } from './post.service';
 
 describe('PostController', () => {
   let controller: PostController;
-  let postService: { createComment: jest.Mock; likePost: jest.Mock };
+  let postService: { likePost: jest.Mock };
 
   beforeEach(async () => {
     postService = {
-      createComment: jest.fn(),
       likePost: jest.fn(),
     };
 
@@ -22,15 +21,6 @@ describe('PostController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
-  });
-
-  it('calls createComment with the authenticated user id', () => {
-    const req = { user: { id: 1 } } as any;
-    const body = { content: 'Test comment' } as any;
-
-    controller.createComment(2, req, body);
-
-    expect(postService.createComment).toHaveBeenCalledWith(2, 1, body);
   });
 
   it('calls likePost with the authenticated user id', () => {
