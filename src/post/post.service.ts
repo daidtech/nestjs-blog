@@ -1,8 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostService {
@@ -128,7 +127,23 @@ export class PostService {
     });
   }
 
+  deleteComment(id: number) {
+    return this.prisma.comment.delete({
+      where: { id },
+    });
+  }
+
   async likePost(postId: number, userId: number) {
+    const existingLike = await this.prisma.like.findFirst({
+      where: { postId, userId },
+    });
+
+    if (existingLike) {
+      return this.prisma.like.delete({
+        where: { id: existingLike.id },
+      });
+    }
+
     return this.prisma.like.create({
       data: {
         postId,

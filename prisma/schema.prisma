@@ -27,6 +27,7 @@ model User {
   updatedAt   DateTime @updatedAt
   posts       Post[]
   comments    Comment[]
+  likes       Like[]
 }
 
 model Post {
@@ -43,6 +44,7 @@ model Post {
   categories Category[]
   taggings   Tagging[]
   comments   Comment[]
+  likes      Like[]
 }
 
 model Comment {
@@ -86,5 +88,16 @@ model Tagging {
 
   @@id([postId, tagId])
   @@index([tagId])
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
 }
 
