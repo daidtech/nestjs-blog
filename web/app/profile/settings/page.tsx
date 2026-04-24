@@ -1,27 +1,80 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 
 export default function SettingsPage() {
   const { user, login } = useAuth();
-  const [form, setForm] = useState({
-    firstName: user?.firstName ?? '',
-    lastName: user?.lastName ?? '',
-    username: user?.username ?? '',
-    bio: user?.bio ?? '',
-    phoneNumber: user?.phoneNumber ?? '',
-  });
-  const [passwords, setPasswords] = useState({
-    current: '',
-    newPassword: '',
-    confirm: '',
-  });
-  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  const profileFormik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      username: user?.username ?? '',
+      bio: user?.bio ?? '',
+      phoneNumber: user?.phoneNumber ?? '',
+    },
+    validationSchema: Yup.object({
+      firstName: Yup.string().max(32, 'Must be 32 characters or less'),
+      lastName: Yup.string().max(32, 'Must be 32 characters or less'),
+      username: Yup.string().max(32, 'Must be 32 characters or less'),
+      bio: Yup.string().max(160, 'Bio must be 160 characters or less'),
+      phoneNumber: Yup.string().optional(),
+    }),
+    onSubmit: async (values) => {
+      setError('');
+      setSuccess('');
+      try {
+        const updated = await apiFetch<typeof user>(`/users/${user!.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(values),
+        });
+        login(localStorage.getItem('token')!, { ...user!, ...updated });
+        setSuccess('Profile updated successfully');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Update failed');
+      }
+    },
+  });
+
+  const passwordFormik = useFormik({
+    initialValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    validationSchema: Yup.object({
+      currentPassword: Yup.string().required('Current password is required'),
+      newPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('New password is required'),
+      confirmPassword: Yup.string()
+        .oneOf([Yup.ref('newPassword')], 'Passwords do not match')
+        .required('Confirm your new password'),
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      setError('');
+      setSuccess('');
+      try {
+        await apiFetch('/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+          }),
+        });
+        resetForm();
+        setSuccess('Password changed successfully');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Password change failed');
+      }
+    },
+  });
 
   if (!user) {
     return (
@@ -32,54 +85,6 @@ export default function SettingsPage() {
         </Link>
       </div>
     );
-  }
-
-  async function handleProfileSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSaving(true);
-
-    try {
-      const updated = await apiFetch<typeof user>(`/users/${user!.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(form),
-      });
-      login(localStorage.getItem('token')!, { ...user!, ...updated });
-      setSuccess('Profile updated successfully');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handlePasswordSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (passwords.newPassword !== passwords.confirm) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await apiFetch('/auth/change-password', {
-        method: 'POST',
-        body: JSON.stringify({
-          currentPassword: passwords.current,
-          newPassword: passwords.newPassword,
-        }),
-      });
-      setPasswords({ current: '', newPassword: '', confirm: '' });
-      setSuccess('Password changed successfully');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Password change failed');
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (
@@ -102,10 +107,10 @@ export default function SettingsPage() {
       {/* Profile Info */}
       <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
         <h2 className="text-lg font-bold text-gray-900 mb-6">Profile Information</h2>
-        <form onSubmit={handleProfileSubmit} className="space-y-5">
+        <form onSubmit={profileFormik.handleSubmit} className="space-y-5">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl">
-              {(form.firstName || user.username)[0]?.toUpperCase()}
+              {(profileFormik.values.firstName || user.username)[0]?.toUpperCase()}
             </div>
             <button
               type="button"
@@ -120,19 +125,29 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
               <input
                 type="text"
-                value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                name="firstName"
+                value={profileFormik.values.firstName}
+                onChange={profileFormik.handleChange}
+                onBlur={profileFormik.handleBlur}
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
               />
+              {profileFormik.touched.firstName && profileFormik.errors.firstName && (
+                <p className="text-xs text-red-600 mt-2">{profileFormik.errors.firstName}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
               <input
                 type="text"
-                value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                name="lastName"
+                value={profileFormik.values.lastName}
+                onChange={profileFormik.handleChange}
+                onBlur={profileFormik.handleBlur}
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
               />
+              {profileFormik.touched.lastName && profileFormik.errors.lastName && (
+                <p className="text-xs text-red-600 mt-2">{profileFormik.errors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -140,41 +155,56 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
             <input
               type="text"
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              name="username"
+              value={profileFormik.values.username}
+              onChange={profileFormik.handleChange}
+              onBlur={profileFormik.handleBlur}
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
+            {profileFormik.touched.username && profileFormik.errors.username && (
+              <p className="text-xs text-red-600 mt-2">{profileFormik.errors.username}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Bio</label>
             <textarea
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              name="bio"
+              value={profileFormik.values.bio}
+              onChange={profileFormik.handleChange}
+              onBlur={profileFormik.handleBlur}
               placeholder="Tell us about yourself..."
               rows={3}
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none"
             />
+            {profileFormik.touched.bio && profileFormik.errors.bio && (
+              <p className="text-xs text-red-600 mt-2">{profileFormik.errors.bio}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
             <input
               type="tel"
-              value={form.phoneNumber}
-              onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+              name="phoneNumber"
+              value={profileFormik.values.phoneNumber}
+              onChange={profileFormik.handleChange}
+              onBlur={profileFormik.handleBlur}
               placeholder="+1 (555) 000-0000"
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
+            {profileFormik.touched.phoneNumber && profileFormik.errors.phoneNumber && (
+              <p className="text-xs text-red-600 mt-2">{profileFormik.errors.phoneNumber}</p>
+            )}
           </div>
 
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              disabled={saving}
+              disabled={profileFormik.isSubmitting}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {profileFormik.isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -183,44 +213,59 @@ export default function SettingsPage() {
       {/* Change Password */}
       <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
         <h2 className="text-lg font-bold text-gray-900 mb-6">Change Password</h2>
-        <form onSubmit={handlePasswordSubmit} className="space-y-5">
+        <form onSubmit={passwordFormik.handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
             <input
               type="password"
-              value={passwords.current}
-              onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+              name="currentPassword"
+              value={passwordFormik.values.currentPassword}
+              onChange={passwordFormik.handleChange}
+              onBlur={passwordFormik.handleBlur}
               required
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
+            {passwordFormik.touched.currentPassword && passwordFormik.errors.currentPassword && (
+              <p className="text-xs text-red-600 mt-2">{passwordFormik.errors.currentPassword}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
             <input
               type="password"
-              value={passwords.newPassword}
-              onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+              name="newPassword"
+              value={passwordFormik.values.newPassword}
+              onChange={passwordFormik.handleChange}
+              onBlur={passwordFormik.handleBlur}
               required
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
+            {passwordFormik.touched.newPassword && passwordFormik.errors.newPassword && (
+              <p className="text-xs text-red-600 mt-2">{passwordFormik.errors.newPassword}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
             <input
               type="password"
-              value={passwords.confirm}
-              onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+              name="confirmPassword"
+              value={passwordFormik.values.confirmPassword}
+              onChange={passwordFormik.handleChange}
+              onBlur={passwordFormik.handleBlur}
               required
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
+            {passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword && (
+              <p className="text-xs text-red-600 mt-2">{passwordFormik.errors.confirmPassword}</p>
+            )}
           </div>
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              disabled={saving}
+              disabled={passwordFormik.isSubmitting}
               className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors disabled:opacity-50"
             >
-              Change Password
+              {passwordFormik.isSubmitting ? 'Changing...' : 'Change Password'}
             </button>
           </div>
         </form>

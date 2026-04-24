@@ -36,9 +36,13 @@ export class PostController {
     return this.postService.likePost(postId, req.user?.id ?? 1);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() body: CreatePostDto) {
-    return this.postService.create(body);
+  create(@Body() body: CreatePostDto, @Req() req: Request) {
+    return this.postService.create({
+      ...body,
+      authorId: req.user?.id,
+    });
   }
 
   @Patch(':id')
