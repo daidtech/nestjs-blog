@@ -28,7 +28,14 @@ These instructions apply to the entire repository (NestJS backend and /web front
 - Global validation pipe is enabled (see `main.ts`).
 - Use Prisma ORM for all database access.
 
-## 6. Docker & Deployment
+## 6. Testing and feature validation
+- When changing backend API behavior or frontend feature behavior, add or update tests before declaring the work complete.
+- For backend changes, add/update Jest or Node spec tests in `src/**/*.spec.ts` or `test/**/*.spec.ts`.
+- For frontend feature changes, add/update tests in `web/**/*.spec.ts`, `web/**/*.test.ts`, or the frontend test suite.
+- Run the relevant test suites after code changes and keep tests passing.
+- If a new feature is added, ensure the feature has coverage with a test that validates its behavior.
+
+## 7. Docker & Deployment
 - Use `docker-compose.yml` for local development with PostgreSQL and the app.
 - Database config is managed via environment variables.
 
