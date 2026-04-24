@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -108,7 +108,21 @@ export class PostService {
     });
   }
 
-  createComment(postId: number, authorId: number, data: { content: string; parentId?: number | null }) {
+  async createComment(postId: number, authorId: number, data: { content: string; parentId?: number | null }) {
+    if (typeof data.parentId !== 'undefined' && data.parentId !== null) {
+      const parentComment = await this.prisma.comment.findUnique({
+        where: { id: data.parentId },
+      });
+
+      if (!parentComment) {
+        throw new BadRequestException('parentId does not reference an existing comment');
+      }
+
+      if (parentComment.postId !== postId) {
+        throw new BadRequestException('parentId must belong to the same post');
+      }
+    }
+
     return this.prisma.comment.create({
       data: {
         content: data.content,

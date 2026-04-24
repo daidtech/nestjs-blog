@@ -126,6 +126,11 @@ export default function CommentSection({ postId }: Props) {
 
   async function handleDelete(id: number) {
     if (!confirm('Delete this comment?')) return;
+
+    if (replyTo === id) {
+      setReplyTo(null);
+    }
+
     try {
       await apiFetch(`/comments/${id}`, { method: 'DELETE' });
       loadComments();
