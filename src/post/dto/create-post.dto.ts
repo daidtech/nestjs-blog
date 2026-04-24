@@ -6,6 +6,8 @@ import {
   IsString,
   MaxLength,
   Min,
+  IsArray,
+  ArrayNotEmpty,
 } from 'class-validator';
 
 export class CreatePostDto {
@@ -31,6 +33,18 @@ export class CreatePostDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  categoryIds?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  tagIds?: number[];
 
   @IsOptional()
   @IsInt()

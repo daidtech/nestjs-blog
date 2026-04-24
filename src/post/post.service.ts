@@ -39,26 +39,34 @@ export class PostService {
     if (typeof authorId === 'undefined') return null;
     const slug = data.slug ?? this.buildSlug(data.title);
 
+    const createData: any = {
+      title: data.title,
+      slug,
+      excerpt: data.excerpt,
+      content: data.content,
+      published: data.published ?? false,
+      authorId,
+    };
+
+    if (data.categoryIds?.length) {
+      createData.categories = {
+        connect: data.categoryIds.map((id) => ({ id })),
+      };
+    }
+
+    if (data.tagIds) {
+      createData.taggings = {
+        create: data.tagIds.map((tagId) => ({ tag: { connect: { id: tagId } } })),
+      };
+    }
+
     return this.prisma.post.create({
-      data: {
-        title: data.title,
-        slug,
-        excerpt: data.excerpt,
-        content: data.content,
-        published: data.published ?? false,
-        authorId,
-      },
+      data: createData,
     });
   }
 
   async update(id: number, data: UpdatePostDto) {
-    const payload: {
-      title?: string;
-      slug?: string;
-      excerpt?: string | null;
-      content?: string | null;
-      published?: boolean;
-    } = {};
+    const payload: any = {};
 
     if (typeof data.title !== 'undefined') {
       payload.title = data.title;
@@ -81,6 +89,19 @@ export class PostService {
 
     if (typeof data.published !== 'undefined') {
       payload.published = data.published;
+    }
+
+    if (typeof data.categoryIds !== 'undefined') {
+      payload.categories = {
+        set: data.categoryIds.map((id) => ({ id })),
+      };
+    }
+
+    if (typeof data.tagIds !== 'undefined') {
+      payload.taggings = {
+        deleteMany: {},
+        create: data.tagIds.map((tagId) => ({ tag: { connect: { id: tagId } } })),
+      };
     }
 
     return this.prisma.post.update({
