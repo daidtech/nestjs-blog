@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
+import { redirectToLogin } from '@/lib/navigation';
 
 type Props = {
   postId: number;
@@ -16,7 +17,7 @@ export default function BookmarkButton({ postId, initialBookmarked = false }: Pr
 
   async function handleToggle() {
     if (!token) {
-      window.location.href = '/auth/login';
+      redirectToLogin();
       return;
     }
 
