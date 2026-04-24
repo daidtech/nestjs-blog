@@ -1,6 +1,6 @@
 import { Controller, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { PostService } from 'src/post/post.service';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { PostService } from '@/post/post.service';
 
 @Controller('comments')
 export class CommentController {

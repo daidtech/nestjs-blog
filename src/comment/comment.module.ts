@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CommentController } from './comment.controller';
-import { PostModule } from 'src/post/post.module';
+import { PostModule } from '@/post/post.module';
 
 @Module({
   imports: [PostModule],

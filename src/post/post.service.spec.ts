@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PostService } from './post.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 
 describe('PostService', () => {
   let service: PostService;
@@ -9,6 +9,7 @@ describe('PostService', () => {
     comment: {
       findUnique: jest.Mock;
       create: jest.Mock;
+      delete: jest.Mock;
     };
     like: {
       findFirst: jest.Mock;
@@ -22,6 +23,7 @@ describe('PostService', () => {
       comment: {
         findUnique: jest.fn(),
         create: jest.fn(),
+        delete: jest.fn(),
       },
       like: {
         findFirst: jest.fn(),
@@ -99,6 +101,17 @@ describe('PostService', () => {
         },
       });
       expect(result).toEqual({ id: 3, content: 'Hi', postId: 1, authorId: 1, parentId: null });
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('removes a comment by id', async () => {
+      prisma.comment.delete.mockResolvedValue({ id: 5, postId: 1, authorId: 1 });
+
+      const result = await service.deleteComment(5);
+
+      expect(prisma.comment.delete).toHaveBeenCalledWith({ where: { id: 5 } });
+      expect(result).toEqual({ id: 5, postId: 1, authorId: 1 });
     });
   });
 });

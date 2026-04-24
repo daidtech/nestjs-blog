@@ -22,6 +22,7 @@ These instructions apply to the entire repository (NestJS backend and /web front
 ## 4. Code Quality
 - Use Prettier and ESLint for formatting and linting (see config files in root and `/web`).
 - TypeScript is enforced for both backend and frontend.
+- Backend and frontend both support `@/` path aliasing for root imports.
 
 ## 5. Backend (NestJS)
 - Use DTOs with validation for all API endpoints.
