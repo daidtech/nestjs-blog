@@ -16,6 +16,7 @@ module.exports = {
     },
   },
   plugins: ['@typescript-eslint', 'react', 'react-hooks', 'jsx-a11y'],
+  ignorePatterns: ['node_modules', '.next', 'out', 'coverage', 'build', '.DS_Store'],
   extends: [
     'next/core-web-vitals',
     'eslint:recommended',
