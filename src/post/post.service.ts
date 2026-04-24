@@ -16,6 +16,29 @@ export class PostService {
       .replace(/-+/g, '-');
   }
 
+  private async resolveUniqueSlug(baseSlug: string, excludePostId?: number): Promise<string> {
+    let slug = baseSlug;
+    let counter = 1;
+
+    const buildCandidate = () => (counter === 1 ? baseSlug : `${baseSlug}-${counter}`);
+
+    while (true) {
+      const existing = await this.prisma.post.findFirst({
+        where: {
+          slug,
+          ...(typeof excludePostId !== 'undefined'
+            ? { NOT: { id: excludePostId } }
+            : {}),
+        },
+      });
+      if (!existing) {
+        return slug;
+      }
+      counter += 1;
+      slug = buildCandidate();
+    }
+  }
+
   async findAll(options: {
     page?: number;
     limit?: number;
@@ -122,7 +145,8 @@ export class PostService {
   async create(data: CreatePostDto) {
     const authorId = data.authorId;
     if (typeof authorId === 'undefined') return null;
-    const slug = data.slug ?? this.buildSlug(data.title);
+    const baseSlug = this.buildSlug(data.slug ?? data.title);
+    const slug = await this.resolveUniqueSlug(baseSlug);
 
     const createData: any = {
       title: data.title,
@@ -156,12 +180,14 @@ export class PostService {
     if (typeof data.title !== 'undefined') {
       payload.title = data.title;
       if (typeof data.slug === 'undefined') {
-        payload.slug = this.buildSlug(data.title);
+        const baseSlug = this.buildSlug(data.title);
+        payload.slug = await this.resolveUniqueSlug(baseSlug, id);
       }
     }
 
     if (typeof data.slug !== 'undefined') {
-      payload.slug = data.slug;
+      const baseSlug = this.buildSlug(data.slug);
+      payload.slug = await this.resolveUniqueSlug(baseSlug, id);
     }
 
     if (typeof data.excerpt !== 'undefined') {
