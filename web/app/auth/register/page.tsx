@@ -47,6 +47,7 @@ export default function RegisterPage() {
           firstName: form.firstName || undefined,
           lastName: form.lastName || undefined,
           password: form.password,
+          confirmPassword: form.confirmPassword,
         }),
       });
 
