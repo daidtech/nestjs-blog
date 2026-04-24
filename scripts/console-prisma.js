@@ -1,7 +1,14 @@
 require('dotenv').config();
 
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { Pool } = require('pg');
+
+const connectionString = process.env.DATABASE_URL;
+const pool = connectionString ? new Pool({ connectionString }) : new Pool();
+const prisma = new PrismaClient({
+	adapter: new PrismaPg(pool),
+});
 
 global.prisma = prisma;
 
