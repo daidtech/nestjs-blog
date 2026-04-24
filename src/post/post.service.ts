@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { error } from 'console';
 
 @Injectable()
 export class PostService {
@@ -14,28 +15,6 @@ export class PostService {
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
-  }
-
-  private async getOrCreateDefaultAuthorId(): Promise<number> {
-    const existing = await this.prisma.user.findFirst({
-      orderBy: { id: 'asc' },
-      select: { id: true },
-    });
-
-    if (existing) {
-      return existing.id;
-    }
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: 'admin@example.com',
-        firstName: 'Admin',
-        password: '',
-      },
-      select: { id: true },
-    });
-
-    return user.id;
   }
 
   findAll() {
@@ -57,7 +36,8 @@ export class PostService {
   }
 
   async create(data: CreatePostDto) {
-    const authorId = data.authorId ?? (await this.getOrCreateDefaultAuthorId());
+    const authorId = data.authorId;
+    if (typeof authorId === 'undefined') return null;
     const slug = data.slug ?? this.buildSlug(data.title);
 
     return this.prisma.post.create({
