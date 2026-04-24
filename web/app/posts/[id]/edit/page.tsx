@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { apiFetch } from '@/lib/api';
+import ReactSelect2 from '@/components/ReactSelect2';
 import type { Post, Category, Tag } from '@/lib/types';
 
 type EditPostForm = {
@@ -91,21 +92,6 @@ export default function EditPostPage() {
     });
   }, [params.id]);
 
-  function toggleCategory(id: number) {
-    const current = formik.values.categoryIds;
-    const next = current.includes(id)
-      ? current.filter((x) => x !== id)
-      : [...current, id];
-    formik.setFieldValue('categoryIds', next);
-  }
-
-  function toggleTag(id: number) {
-    const current = formik.values.tagIds;
-    const next = current.includes(id)
-      ? current.filter((x) => x !== id)
-      : [...current, id];
-    formik.setFieldValue('tagIds', next);
-  }
 
   if (loading) {
     return (
@@ -183,49 +169,43 @@ export default function EditPostPage() {
             />
           </div>
 
-          {categories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => toggleCategory(cat.id)}
-                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                      formik.values.categoryIds.includes(cat.id)
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
+            <ReactSelect2
+              options={categories}
+              value={formik.values.categoryIds}
+              onChange={(selectedIds) => formik.setFieldValue('categoryIds', selectedIds)}
+              onCreate={async (name) => {
+                const created = await apiFetch<Category>('/categories', {
+                  method: 'POST',
+                  body: JSON.stringify({ name }),
+                });
+                setCategories((prev) => [...prev, created]);
+                return created;
+              }}
+              placeholder="Select or create categories"
+              allowCreate
+            />
+          </div>
 
-          {tags.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag.id)}
-                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                      formik.values.tagIds.includes(tag.id)
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <ReactSelect2
+              options={tags}
+              value={formik.values.tagIds}
+              onChange={(selectedIds) => formik.setFieldValue('tagIds', selectedIds)}
+              onCreate={async (name) => {
+                const created = await apiFetch<Tag>('/tags', {
+                  method: 'POST',
+                  body: JSON.stringify({ name }),
+                });
+                setTags((prev) => [...prev, created]);
+                return created;
+              }}
+              placeholder="Select or create tags"
+              allowCreate
+            />
+          </div>
 
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
             <label className="relative inline-flex items-center cursor-pointer">

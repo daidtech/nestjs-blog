@@ -1,5 +1,6 @@
-import { Controller, Get } from "@nestjs/common";
+import { Body, Controller, Get, Post } from "@nestjs/common";
 import { TagService } from "./tag.service";
+import { CreateTagDto } from './dto/create-tag.dto';
 
 @Controller('tags')
 export class TagController {
@@ -8,5 +9,10 @@ export class TagController {
   @Get()
   findAll() {
     return this.tagService.findAll();
+  }
+
+  @Post()
+  create(@Body() body: CreateTagDto) {
+    return this.tagService.create(body);
   }
 }
